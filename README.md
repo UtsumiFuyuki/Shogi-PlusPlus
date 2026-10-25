@@ -5,11 +5,12 @@ Basic funcionality planned, such as KIF notation, AI Intergration, either Lesser
 Feature list:
 
 ## UI
-- [ ] Title Menu
+- [ ] Title Menu (W.I.P.)
 - [ ] Settings
 - [ ] Language
-- [ ] KIF Notation
+- [ ] KIF Notation (W.I.P.)
 - [ ] Board/Pieces
+- [ ] Match Settings
 
 ## Gameplay
 - [x] Sente/Gote differentiation
@@ -26,4 +27,11 @@ Feature list:
 - [ ] Promotion
 - [ ] Oute/Tsumi (Check/Checkmate)
 - [ ] Handicap modes
-- [ ] Shogi Computer (eg. YaneuraOU) to play against
+- [ ] Draw condition checks
+- [ ] Clock
+
+## Other
+- [ ] Implement USI protocol
+- [ ] Game exports & imports
+- [ ] SFEN parser
+- [ ] Engine selection
