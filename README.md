@@ -15,12 +15,12 @@ Feature list:
 - [x] Sente/Gote differentiation
 - [x] PAWN Movement
 - [x] KNIGHT Movement
-- [ ] LANCE Movement
-- [ ] BISHOP Movement
-- [ ] ROOK Movement
-- [ ] SILVER Movement
-- [ ] GOLD Movement
-- [ ] KING Movement
+- [x] LANCE Movement
+- [x] BISHOP Movement
+- [x] ROOK Movement
+- [x] SILVER Movement
+- [x] GOLD Movement
+- [x] KING Movement
 - [ ] Captures
 - [ ] Striking pieces
 - [ ] Promotion
