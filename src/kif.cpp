@@ -1,6 +1,9 @@
 #include <print>
 #include <shogi.hpp>
 
+// NOTE: This is not KIF notation, this is Western Notation (numeric only)
+// I dunno why I refer to this as KIF, I'll change the name later.
+
 Kif parseMove(std::string move)
 {
     Kif kif{};

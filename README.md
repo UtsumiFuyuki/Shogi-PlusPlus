@@ -1,6 +1,6 @@
 # Shogi++
 A Shogi++ is a Shogi UI app made in entirely in C++.
-Basic funcionality planned, such as KIF notation, AI Intergration, either Lesserkai or YaneuraOU, and Handicap modes.
+Basic funcionality planned, such as Western/Japanese/KIF notation, AI Intergration, either Lesserkai or YaneuraOU, and Handicap modes.
 
 Feature list:
 
@@ -8,7 +8,8 @@ Feature list:
 - [ ] Title Menu (W.I.P.)
 - [ ] Settings
 - [ ] Language
-- [ ] KIF Notation (W.I.P.)
+- [ ] Western Notation & Japanese Notation (W.I.P.)
+- [ ] KIF Notation
 - [ ] Board/Pieces
 - [ ] Match Settings
 
