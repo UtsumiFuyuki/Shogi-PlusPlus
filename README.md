@@ -23,8 +23,8 @@ Feature list:
 - [x] SILVER Movement
 - [x] GOLD Movement
 - [x] KING Movement
-- [ ] Captures
-- [ ] Striking pieces
+- [x] Captures
+- [x] Striking pieces
 - [ ] Promotion
 - [ ] Oute/Tsumi (Check/Checkmate)
 - [ ] Handicap modes

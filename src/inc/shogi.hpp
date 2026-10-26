@@ -1,9 +1,16 @@
 #pragma once
 
-#include <vector>
 #include <array>
 #include <utility>
 #include <string>
+
+#define HAND_PAWNS 0
+#define HAND_KNIGHTS 1
+#define HAND_LANCES 2
+#define HAND_SILVERS 3
+#define HAND_GOLDS 4
+#define HAND_ROOKS 5
+#define HAND_BISHOPS 6
 
 enum class color {SENTE, GOTE, NONE};
 enum class piece {PAWN, KNIGHT, LANCE, SILVER, GOLD, BISHOP, ROOK, KING, EMPTY};
@@ -29,8 +36,12 @@ class Game
 {
     public:
         void startMatch();
-
         void displayBoard();
+
+        // Displays the hand of the requested player
+        void displayHand(bool player);
+
+        // Rudimentary evaluation function based purely on material
         double eval();
 
         // Returns information about a piece at a specific square
@@ -44,14 +55,14 @@ class Game
         // 0 - Legal Move
         // 1 - Legal Capture Move
         // -1 - Illegal Move
-        int calculatePawn(int &originSquare, const int &destSquare);
-        int calculateKnight(int &originSquare, const int &destSquare);
-        int calculateLance(int &originSquare, const int &destSquare);
-        int calculateSilver(int &originSquare, const int &destSquare);
-        int calculateGold(int &originSquare, const int &destSquare);
-        int calculateBishop(int &originSquare, const int &destSquare, bool promoted);
-        int calculateRook(int &originSquare, const int &destSquare, bool promoted);
-        int calculateKing(int &originSquare, const int &destSquare);
+        int calculatePawn(int &originSquare, const unsigned int &destSquare);
+        int calculateKnight(int &originSquare, const unsigned int &destSquare);
+        int calculateLance(int &originSquare, const unsigned int &destSquare);
+        int calculateSilver(int &originSquare, const unsigned int &destSquare);
+        int calculateGold(int &originSquare, const unsigned int &destSquare);
+        int calculateBishop(int &originSquare, const unsigned int &destSquare, bool promoted);
+        int calculateRook(int &originSquare, const unsigned int &destSquare, bool promoted);
+        int calculateKing(int &originSquare, const unsigned int &destSquare);
 
     private:
         std::array<color, 81> board_color = {
@@ -81,6 +92,6 @@ class Game
     bool gameOver{};
     bool turn{}; // True = Gote, False = Sente
 
-    std::vector<piece> senteHand{};
-    std::vector<piece> goteHand{};
+    std::array<unsigned int, 7> senteHand{};
+    std::array<unsigned int, 7> goteHand{};
 };

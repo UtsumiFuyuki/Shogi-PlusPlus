@@ -76,6 +76,10 @@ double Game::eval() {
             case (piece::ROOK):
                 value = VALUE_ROOK;
                 break;
+            case (piece::KING):
+            case (piece::EMPTY):
+                // Empty squares aren't worth anything and the King is priceless
+                break;
         }
 
         if (board_color[i] == color::SENTE)
@@ -87,14 +91,18 @@ double Game::eval() {
     return goteEval - senteEval;
 }
 
-// Game Logic
+// ===== Game Logic =====
 
 void Game::startMatch() {
     while (!gameOver) {
         std::string input;
         Kif move{};
 
+        system("clear");
+
+        displayHand(!turn);
         displayBoard();
+        displayHand(turn);
 
         do {
             std::print("{}'s Turn: ", turn ? "Gote" : "Sente");
@@ -109,8 +117,7 @@ void Game::startMatch() {
 }
 
 void Game::displayBoard() {
-    system("clear");
-    for (int i = 0; i < board.size(); i++) {
+    for (size_t i = 0; i < board.size(); i++) {
         if ((i % 9) == 0)
             std::println();
 
@@ -154,40 +161,142 @@ void Game::displayBoard() {
     std::println();
 }
 
+void Game::displayHand(bool player) {
+    auto hand = (player ? goteHand : senteHand);
+    std::println("{}'s Hand | P: {} N: {} L: {} S: {} G: {} R: {} B: {}",
+    (player ? "Gote" : "Sente"),
+    hand[HAND_PAWNS],
+    hand[HAND_KNIGHTS],
+    hand[HAND_LANCES],
+    hand[HAND_SILVERS],
+    hand[HAND_GOLDS],
+    hand[HAND_ROOKS],
+    hand[HAND_BISHOPS]);
+}
+
 bool Game::movePiece(const Kif &kif) {
     int originSquare{};
     int result{};
+    bool isStrike{};
+    
+    auto &hand = (turn ? goteHand : senteHand);
 
     if (kif.square < 11 || kif.square > 99) {
         std::println("Illegal Move!");
         return false;
     }
 
+    if (kif.op == operation::STRIKE) {
+        if (pieceAtSquare(kif.square / 10, kif.square % 10).info.first != piece::EMPTY)
+            return false;
+        isStrike = true;
+    }
+
     switch (kif.opPiece) {
         case (piece::PAWN):
+            if (isStrike) {
+                if (hand[HAND_PAWNS] == 0)
+                    return false;
+                
+                // Check for nifu violation
+                for (size_t i = 1; i <= 9; i++) {
+                    auto p = pieceAtSquare(kif.square / 10, i);
+                    if (p.info.first == piece::PAWN && p.info.second == (turn ? color::GOTE : color::SENTE))
+                        return false;
+                }
+
+                // Ensure that pawn is not placed at end of board
+                if ((kif.square % 10) == (turn ? 9 : 1))
+                    return false;
+                hand[HAND_PAWNS]--;
+                break;
+            }
+
             result = calculatePawn(originSquare, kif.square);
             break;
         case (piece::KNIGHT):
+            if (isStrike) {
+                if (hand[HAND_KNIGHTS] == 0)
+                    return false;
+
+                // Ensure that knight is not placed less than 2 squares away from the end of board
+                if (((kif.square % 10) > 7 && turn) || ((kif.square % 10) < 3 && !turn))
+                    return false;
+                hand[HAND_KNIGHTS]--;
+                break;
+            }
+
             result = calculateKnight(originSquare, kif.square);
             break;
         case (piece::LANCE):
+            if (isStrike) {
+                if (hand[HAND_LANCES] == 0)
+                    return false;
+
+                // Ensure that lance is not placed at end of board
+                if ((kif.square % 10) == (turn ? 9 : 1))
+                    return false;
+                hand[HAND_LANCES]--;
+                break;
+            }
+
             result = calculateLance(originSquare, kif.square);
             break;
         case (piece::SILVER):
+            if (isStrike) {
+                if (hand[HAND_SILVERS] == 0)
+                    return false;
+                hand[HAND_SILVERS]--;
+                break;
+            }
+
             result = calculateSilver(originSquare, kif.square);
             break;
         case (piece::GOLD):
+            if (isStrike) {
+                if (hand[HAND_GOLDS] == 0)
+                    return false;
+                hand[HAND_GOLDS]--;
+                break;
+            }
+
             result = calculateGold(originSquare, kif.square);
             break;
         case (piece::BISHOP):
+            if (isStrike) {
+                if (hand[HAND_BISHOPS] == 0)
+                    return false;
+                hand[HAND_BISHOPS]--;
+                break;
+            }
+
             result = calculateBishop(originSquare, kif.square, false);
             break;
         case (piece::ROOK):
+            if (isStrike) {
+                if (hand[HAND_ROOKS] == 0)
+                    return false;
+                hand[HAND_ROOKS]--;
+                break;
+            }
+
             result = calculateRook(originSquare, kif.square, false);
             break;
         case (piece::KING):
+            if (isStrike)
+                return false;
+
             result = calculateKing(originSquare, kif.square);
             break;
+        case (piece::EMPTY):
+            // Unhandled for obvious reasons
+            break;
+    }
+
+    if (isStrike) {
+        board[(fileToIndex(kif.square / 10) + rankToIndex(kif.square % 10))] = kif.opPiece;
+        board_color[(fileToIndex(kif.square / 10) + rankToIndex(kif.square % 10))] = (turn ? color::GOTE : color::SENTE);
+        return true;
     }
 
     if (result < 0) {
@@ -205,12 +314,40 @@ bool Game::movePiece(const Kif &kif) {
         case (operation::STRIKE):
             // Piece calculations are disregarded for strikes
             break;
-
         case (operation::CAPTURE):
             if (result != 1) {
                 std::println("Illegal Move!");
                 return false;
             }
+            auto p = pieceAtSquare((kif.square / 10), (kif.square % 10));
+
+            switch (p.info.first) {
+                case (piece::PAWN):
+                    hand[HAND_PAWNS]++;
+                    break;
+                case (piece::KNIGHT):
+                    hand[HAND_KNIGHTS]++;
+                    break;
+                case (piece::LANCE):
+                    hand[HAND_LANCES]++;
+                    break;
+                case (piece::SILVER):
+                    hand[HAND_SILVERS]++;
+                    break;
+                case (piece::GOLD):
+                    hand[HAND_GOLDS]++;
+                    break;
+                case (piece::ROOK):
+                    hand[HAND_ROOKS]++;
+                    break;
+                case (piece::BISHOP):
+                    hand[HAND_BISHOPS]++;
+                    break;
+                case (piece::KING):
+                case (piece::EMPTY):
+                    break;
+            }
+
             break;
     }
 
@@ -226,7 +363,7 @@ bool Game::movePiece(const Kif &kif) {
 
 // ===== Piece Calculations =====
 
-int Game::calculatePawn(int &originSquare, const int &destSquare) {
+int Game::calculatePawn(int &originSquare, const unsigned int &destSquare) {
     int file = destSquare / 10;
     int rank = destSquare % 10;
 
@@ -244,7 +381,7 @@ int Game::calculatePawn(int &originSquare, const int &destSquare) {
     return 0;
 }
 
-int Game::calculateKnight(int &originSquare, const int &destSquare) {
+int Game::calculateKnight(int &originSquare, const unsigned int &destSquare) {
     int file = destSquare / 10;
     int rank = destSquare % 10;
 
@@ -270,7 +407,7 @@ int Game::calculateKnight(int &originSquare, const int &destSquare) {
     return 0;
 }
 
-int Game::calculateLance(int &originSquare, const int &destSquare) {
+int Game::calculateLance(int &originSquare, const unsigned int &destSquare) {
     int file = destSquare / 10;
     int rank = destSquare % 10;
 
@@ -291,7 +428,7 @@ int Game::calculateLance(int &originSquare, const int &destSquare) {
     return 0;
 }
 
-int Game::calculateSilver(int &originSquare, const int &destSquare) {
+int Game::calculateSilver(int &originSquare, const unsigned int &destSquare) {
     unsigned int file = destSquare / 10;
     unsigned int rank = destSquare % 10;
 
@@ -316,7 +453,7 @@ int Game::calculateSilver(int &originSquare, const int &destSquare) {
     return -1;
 }
 
-int Game::calculateGold(int &originSquare, const int &destSquare) {
+int Game::calculateGold(int &originSquare, const unsigned int &destSquare) {
     unsigned int file = destSquare / 10;
     unsigned int rank = destSquare % 10;
 
@@ -342,7 +479,7 @@ int Game::calculateGold(int &originSquare, const int &destSquare) {
     return -1;
 }
 
-int Game::calculateBishop(int &originSquare, const int &destSquare, bool promoted) {
+int Game::calculateBishop(int &originSquare, const unsigned int &destSquare, bool promoted) {
     unsigned int file = destSquare / 10;
     unsigned int rank = destSquare % 10;
 
@@ -395,7 +532,7 @@ int Game::calculateBishop(int &originSquare, const int &destSquare, bool promote
     return -1;
 }
 
-int Game::calculateRook(int &originSquare, const int &destSquare, bool promoted) {
+int Game::calculateRook(int &originSquare, const unsigned int &destSquare, bool promoted) {
     unsigned int file = destSquare / 10;
     unsigned int rank = destSquare % 10;
 
@@ -444,7 +581,7 @@ int Game::calculateRook(int &originSquare, const int &destSquare, bool promoted)
     return -1;
 }
 
-int Game::calculateKing(int &originSquare, const int &destSquare) {
+int Game::calculateKing(int &originSquare, const unsigned int &destSquare) {
     unsigned int file = destSquare / 10;
     unsigned int rank = destSquare % 10;
 
