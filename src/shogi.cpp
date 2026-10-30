@@ -125,23 +125,29 @@ void Game::displayBoard() {
 
         switch(board[i]) {
             case (piece::PAWN):
+            case (piece::P_PAWN):
                 p = 'P';
                 break;
+            case (piece::P_LANCE):
             case (piece::LANCE):
                 p = 'L';
                 break;
+            case (piece::P_KNIGHT):
             case (piece::KNIGHT):
                 p = 'N';
                 break;
+            case (piece::P_SILVER):
             case (piece::SILVER):
                 p = 'S';
                 break;
             case (piece::GOLD):
                 p = 'G';
                 break;
+            case (piece::P_BISHOP):
             case (piece::BISHOP):
                 p = 'B';
                 break;
+            case (piece::P_ROOK):
             case (piece::ROOK):
                 p = 'R';
                 break;
@@ -155,7 +161,14 @@ void Game::displayBoard() {
 
         if (board_color[i] == color::GOTE && p != ' ')
             p = tolower(p);
-        std::print("[{}]", p);
+
+        std::print("[");
+
+        if (static_cast<int>(board[i]) >= 8)
+            std::print("\033[31m");
+
+        std::print("{}", p);
+        std::print("\033[0m]");
     }
 
     std::println();
@@ -174,10 +187,11 @@ void Game::displayHand(bool player) {
     hand[HAND_BISHOPS]);
 }
 
-bool Game::movePiece(const Kif &kif) {
+bool Game::movePiece(Kif &kif) {
     int originSquare{};
     int result{};
     bool isStrike{};
+    auto opPiece = kif.opPiece;
     
     auto &hand = (turn ? goteHand : senteHand);
 
@@ -192,7 +206,7 @@ bool Game::movePiece(const Kif &kif) {
         isStrike = true;
     }
 
-    switch (kif.opPiece) {
+    switch (opPiece) {
         case (piece::PAWN):
             if (isStrike) {
                 if (hand[HAND_PAWNS] == 0)
@@ -252,15 +266,27 @@ bool Game::movePiece(const Kif &kif) {
 
             result = calculateSilver(originSquare, kif.square);
             break;
+        case (piece::P_PAWN):
+            result = calculateGold(originSquare, kif.square, true, piece::P_PAWN);
+            break;
+        case (piece::P_KNIGHT):
+            result = calculateGold(originSquare, kif.square, true, piece::P_KNIGHT);
+            break;
+        case (piece::P_LANCE):
+            result = calculateGold(originSquare, kif.square, true, piece::P_LANCE);
+            break;
+        case (piece::P_SILVER):
+            result = calculateGold(originSquare, kif.square, true, piece::P_SILVER);
+            break;
         case (piece::GOLD):
-            if (isStrike) {
+            if (isStrike && opPiece == piece::GOLD) {
                 if (hand[HAND_GOLDS] == 0)
                     return false;
                 hand[HAND_GOLDS]--;
                 break;
             }
 
-            result = calculateGold(originSquare, kif.square);
+            result = calculateGold(originSquare, kif.square, false, piece::EMPTY);
             break;
         case (piece::BISHOP):
             if (isStrike) {
@@ -294,7 +320,7 @@ bool Game::movePiece(const Kif &kif) {
     }
 
     if (isStrike) {
-        board[(fileToIndex(kif.square / 10) + rankToIndex(kif.square % 10))] = kif.opPiece;
+        board[(fileToIndex(kif.square / 10) + rankToIndex(kif.square % 10))] = opPiece;
         board_color[(fileToIndex(kif.square / 10) + rankToIndex(kif.square % 10))] = (turn ? color::GOTE : color::SENTE);
         return true;
     }
@@ -322,24 +348,30 @@ bool Game::movePiece(const Kif &kif) {
             auto p = pieceAtSquare((kif.square / 10), (kif.square % 10));
 
             switch (p.info.first) {
+                case (piece::P_PAWN):
                 case (piece::PAWN):
                     hand[HAND_PAWNS]++;
                     break;
+                case (piece::P_KNIGHT):
                 case (piece::KNIGHT):
                     hand[HAND_KNIGHTS]++;
                     break;
+                case (piece::P_LANCE):
                 case (piece::LANCE):
                     hand[HAND_LANCES]++;
                     break;
+                case (piece::P_SILVER):
                 case (piece::SILVER):
                     hand[HAND_SILVERS]++;
                     break;
                 case (piece::GOLD):
                     hand[HAND_GOLDS]++;
                     break;
+                case (piece::P_ROOK):
                 case (piece::ROOK):
                     hand[HAND_ROOKS]++;
                     break;
+                case (piece::P_BISHOP):
                 case (piece::BISHOP):
                     hand[HAND_BISHOPS]++;
                     break;
@@ -351,7 +383,57 @@ bool Game::movePiece(const Kif &kif) {
             break;
     }
 
-    board[(fileToIndex(kif.square / 10) + rankToIndex(kif.square % 10))] = kif.opPiece;
+    // Promotion Checks
+    auto rank = (kif.square % 10);
+    if (((turn && rank >= 7) || (!turn && rank <= 3)) && static_cast<int>(opPiece) < 8) {
+        // For transcription reasons, I intepret declining a promotion and non-promotion moves differently
+        // (even if you could argue they're treated the same)
+        if (kif.promote == promotion_status::NONE) {
+            std::print("Please clarify promotion status (y/n)?");
+            char input{};
+            std::cin >> input;
+
+            if (input == 'n')
+                goto check_detection;
+            else
+                goto promotion;
+        }
+
+        if (kif.promote == promotion_status::ACCEPTED) {
+    
+            promotion:
+
+            switch (opPiece) {
+                case (piece::PAWN):
+                    opPiece = piece::P_PAWN;
+                    break;
+                case (piece::KNIGHT):
+                    opPiece = piece::P_KNIGHT;
+                    break;
+                case (piece::LANCE):
+                    opPiece = piece::P_LANCE;
+                    break;
+                case (piece::SILVER):
+                    opPiece = piece::P_SILVER;
+                    break;
+                case (piece::ROOK):
+                    opPiece = piece::P_ROOK;
+                    break;
+                case (piece::BISHOP):
+                    opPiece = piece::P_BISHOP;
+                    break;
+                default:
+                    std::println("Piece can not promote! Promotion status will be disregarded!");
+                    kif.promote = promotion_status::NONE;
+            }
+        }
+    }
+
+    check_detection:
+
+    // Check Detection
+
+    board[(fileToIndex(kif.square / 10) + rankToIndex(kif.square % 10))] = opPiece;
     board[(fileToIndex(originSquare / 10) + rankToIndex(originSquare % 10))] = piece::EMPTY;
     board_color[(fileToIndex(kif.square / 10) + rankToIndex(kif.square % 10))] = (turn ? color::GOTE : color::SENTE);
     board_color[(fileToIndex(originSquare / 10) + rankToIndex(originSquare % 10))] = color::NONE;
@@ -453,7 +535,7 @@ int Game::calculateSilver(int &originSquare, const unsigned int &destSquare) {
     return -1;
 }
 
-int Game::calculateGold(int &originSquare, const unsigned int &destSquare) {
+int Game::calculateGold(int &originSquare, const unsigned int &destSquare, bool promoted, piece promotedPiece) {
     unsigned int file = destSquare / 10;
     unsigned int rank = destSquare % 10;
 
@@ -467,7 +549,7 @@ int Game::calculateGold(int &originSquare, const unsigned int &destSquare) {
         pieceAtSquare(file + 1, rank)};
     
     for (auto p : spaces) {
-        if (p.info.first == piece::GOLD && p.info.second == (turn ? color::GOTE : color::SENTE)) {
+        if (p.info.first == (promoted ? promotedPiece : piece::GOLD) && p.info.second == (turn ? color::GOTE : color::SENTE)) {
             originSquare = p.square;
 
             if (pieceAtSquare(file, rank).info.first != piece::EMPTY)

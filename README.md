@@ -25,7 +25,7 @@ Feature list:
 - [x] KING Movement
 - [x] Captures
 - [x] Striking pieces
-- [ ] Promotion
+- [x] Promotion
 - [ ] Oute/Tsumi (Check/Checkmate)
 - [ ] Handicap modes
 - [ ] Draw condition checks

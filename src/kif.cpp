@@ -7,31 +7,35 @@
 Kif parseMove(std::string move)
 {
     Kif kif{};
+    size_t p_char{};
+
     std::println("Parsing KIF...");
-    if (move.size() < 4)
-    {
+    if (move[0] == '+')
+        p_char++;
+
+    if (move.size() < 4 || (p_char > 0 && move.size() < 5)) {
         std::println("Invalid KIF Notation!");
         return {};
     }
 
     std::print("Operating Piece: ");
 
-    switch (move[0])
+    switch (move[0 + p_char])
     {
         case ('P'):
-            kif.opPiece = piece::PAWN;
+            kif.opPiece = (p_char != 0 ? piece::P_PAWN : piece::PAWN);
             std::println("Pawn");
             break;
         case ('L'):
-            kif.opPiece = piece::LANCE;
+            kif.opPiece = (p_char != 0 ? piece::P_LANCE : piece::LANCE);
             std::println("Lance");
             break;
         case ('N'):
-            kif.opPiece = piece::KNIGHT;
+            kif.opPiece = (p_char != 0 ? piece::P_KNIGHT : piece::KNIGHT);
             std::println("Knight");
             break;
         case ('S'):
-            kif.opPiece = piece::SILVER;
+            kif.opPiece = (p_char != 0 ? piece::P_SILVER : piece::SILVER);
             std::println("Silver");
             break;
         case ('G'):
@@ -39,11 +43,11 @@ Kif parseMove(std::string move)
             std::println("Gold");
             break;
         case ('B'):
-            kif.opPiece = piece::BISHOP;
+            kif.opPiece = (p_char != 0 ? piece::P_BISHOP : piece::BISHOP);
             std::println("Bishop");
             break;
         case ('R'):
-            kif.opPiece = piece::ROOK;
+            kif.opPiece = (p_char != 0 ? piece::P_ROOK : piece::ROOK);
             std::println("Rook");
             break;
         case ('K'):
@@ -57,7 +61,7 @@ Kif parseMove(std::string move)
 
     std::print("Operation: ");
 
-    switch (move[1])
+    switch (move[1 + p_char])
     {
         case ('-'):
             kif.op = operation::MOVE;
@@ -76,8 +80,15 @@ Kif parseMove(std::string move)
             return {};
     }
 
-    kif.square += (move[2] - '0') * 10;
-    kif.square += (move[3] - '0');
+    if (move.back() == '=')
+        kif.promote = promotion_status::DECLINED;
+    else if (move.back() == '+')
+        kif.promote = promotion_status::ACCEPTED;
+    else
+        kif.promote = promotion_status::NONE;
+
+    kif.square += (move[2 + p_char] - '0') * 10;
+    kif.square += (move[3 + p_char] - '0');
 
     std::println("Square: {}", kif.square);
 

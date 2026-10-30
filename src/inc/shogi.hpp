@@ -13,15 +13,21 @@
 #define HAND_BISHOPS 6
 
 enum class color {SENTE, GOTE, NONE};
-enum class piece {PAWN, KNIGHT, LANCE, SILVER, GOLD, BISHOP, ROOK, KING, EMPTY};
-
+enum class piece {PAWN, KNIGHT, LANCE, SILVER, GOLD, BISHOP, ROOK, KING, P_PAWN, P_KNIGHT, P_LANCE, P_SILVER, P_ROOK, P_BISHOP, EMPTY};
 enum class operation {MOVE, STRIKE, CAPTURE};
+enum class promotion_status {NONE, DECLINED, ACCEPTED};
 
 struct Kif
 {
     piece opPiece;
     operation op;
     unsigned int square;
+
+    // Optional Fields
+    promotion_status promote;
+
+    // Only used to resolve ambiguity
+    unsigned int origin;
 };
 
 // Parses the given string and outputs a Kif from it
@@ -48,7 +54,7 @@ class Game
         squareInfo pieceAtSquare(unsigned int file, unsigned int rank);
 
         // Preforms legality checks and moves piece. Returns false on fail
-        bool movePiece(const Kif &kif);
+        bool movePiece(Kif &kif);
 
         // Piece-specific calculations
         // The return values are intepreted as follows:
@@ -59,10 +65,13 @@ class Game
         int calculateKnight(int &originSquare, const unsigned int &destSquare);
         int calculateLance(int &originSquare, const unsigned int &destSquare);
         int calculateSilver(int &originSquare, const unsigned int &destSquare);
-        int calculateGold(int &originSquare, const unsigned int &destSquare);
+        int calculateGold(int &originSquare, const unsigned int &destSquare, bool promoted, piece promotedPiece);
         int calculateBishop(int &originSquare, const unsigned int &destSquare, bool promoted);
         int calculateRook(int &originSquare, const unsigned int &destSquare, bool promoted);
         int calculateKing(int &originSquare, const unsigned int &destSquare);
+
+        // Must be called after piece calculations, as it presumes that the move itself is legal
+        bool isInCheck(bool player);
 
     private:
         std::array<color, 81> board_color = {
